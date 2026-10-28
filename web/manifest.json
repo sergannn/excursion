@@ -1,11 +1,11 @@
 {
-    "name": "booking_app",
-    "short_name": "booking_app",
+    "name": "Экскурсии",
+    "short_name": "Экскурсии",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Сервис бронирования экскурсий",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
