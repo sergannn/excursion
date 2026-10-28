@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Диаграмма потоков ролей</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: "default" });
+  </script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f5f5f5;
+      color: #1f1f1f;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.75rem;
+    }
+
+    .mermaid {
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Потоки и роли бронирования экскурсий</h1>
+    <div class="mermaid">
+graph TB
+  subgraph Sellers[Продавцы]
+    S1[Просмотр экскурсий на 10 дней]
+    S2[Выбор места и данных клиента]
+    S3[Ввод цены и подтверждение]
+    S4[Кошелёк и история продаж]
+    S1 --> S2 --> S3 --> S4
+  end
+
+  subgraph Admins[Администратор]
+    A1[Управление бронированиями]
+    A2[Редактирование экскурсий]
+    A3[Расписание и сотрудники]
+    A4[Настройка тарифов]
+    A5[Статистика]
+    A1 --> A2 --> A3 --> A4 --> A5
+  end
+
+  subgraph Drivers[Водители и экскурсоводы]
+    D1[Расписание рейсов]
+    D2[Список остановок]
+    D3[Кошелёк по тарифам]
+    D1 --> D2 --> D3
+  end
+
+  S3 -->|Создаёт| A1
+  A2 -->|Назначает| D1
+  A4 -->|Определяет доходы| S4
+  A4 -->|Определяет доходы| D3
+  S2 -->|Указывает| D2
+    </div>
+  </div>
+</body>
+</html>

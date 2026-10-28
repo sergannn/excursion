@@ -1,0 +1,5 @@
+Step 1: Running flutter analyze exposed 22 diagnostics to resolve sequentially.
+Step 2: Cleaned dart model imports and adjusted PassengerType parsing in lib/src/data/models/booking.dart.
+Step 3: Removed unused wallet import from providers to address analyzer warning in lib/src/data/providers.dart.
+Step 4: Switching focus to blocking errors before addressing remaining warnings as per user request.
+Step 5: Updated admin_home assign staff sheet callback to invalidate providers without unnecessary context.mounted.

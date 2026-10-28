@@ -1,0 +1,8 @@
+project_id = "booking-krym-supabase"
+
+# The handler validates user JWTs via Auth.getUser, including on public reads
+# when an Authorization header is supplied. This also permits anonymous reads
+# and browser OPTIONS requests to reach its JSON/CORS handling.
+[functions.api]
+verify_jwt = false
+static_files = ["./functions/api/fonts/*"]
