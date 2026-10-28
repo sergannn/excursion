@@ -4,14 +4,15 @@ import 'package:intl/intl.dart';
 
 import '../../../data/models/seat_access_request.dart';
 import '../../../data/repositories/seat_permission_repository.dart';
-import '../../../core/api/api_client.dart';
+import '../../../core/api/api_exception.dart';
 import '../../../data/providers.dart';
 
 class SeatAccessRequestsTab extends ConsumerStatefulWidget {
   const SeatAccessRequestsTab({super.key});
 
   @override
-  ConsumerState<SeatAccessRequestsTab> createState() => _SeatAccessRequestsTabState();
+  ConsumerState<SeatAccessRequestsTab> createState() =>
+      _SeatAccessRequestsTabState();
 }
 
 class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
@@ -35,14 +36,25 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
         _requests = requests;
         _loading = false;
       });
-    } catch (e) {
+    } on ApiException catch (e) {
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка загрузки: $e'),
+            content: Text('Ошибка загрузки: ${e.message}'),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (_) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Не удалось загрузить запросы'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -154,7 +166,11 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Запросы доступа к местам 1-2'),
+        title: Text(
+          MediaQuery.sizeOf(context).width < 500
+              ? 'Запросы доступа'
+              : 'Запросы доступа к местам 1-2',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -172,10 +188,8 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
                   selected: _filterStatus == 'pending',
                   onSelected: (selected) {
                     if (selected) {
-                      setState(() {
-                        _filterStatus = 'pending';
-                        _loadRequests();
-                      });
+                      setState(() => _filterStatus = 'pending');
+                      _loadRequests();
                     }
                   },
                 ),
@@ -186,10 +200,8 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
                   selected: _filterStatus.isEmpty,
                   onSelected: (selected) {
                     if (selected) {
-                      setState(() {
-                        _filterStatus = '';
-                        _loadRequests();
-                      });
+                      setState(() => _filterStatus = '');
+                      _loadRequests();
                     }
                   },
                 ),
@@ -207,7 +219,8 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
                   itemBuilder: (context, index) {
                     final request = _requests[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       child: ListTile(
                         title: Text(
                           '${request.excursion?.title ?? 'Экскурсия ${request.excursionId}'} - Место ${request.seatNumber}',
@@ -215,12 +228,16 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${request.user?.name ?? 'Пользователь ${request.userId}'}'),
-                            Text(DateFormat('dd.MM.yyyy').format(request.excursionDate)),
-                            if (request.reason != null) Text('Причина: ${request.reason}'),
+                            Text(
+                                '${request.user?.name ?? 'Пользователь ${request.userId}'}'),
+                            Text(DateFormat('dd.MM.yyyy')
+                                .format(request.excursionDate)),
+                            if (request.reason != null)
+                              Text('Причина: ${request.reason}'),
                             Chip(
                               label: Text(_getStatusText(request.status)),
-                              backgroundColor: _getStatusColor(request.status).withOpacity(0.2),
+                              backgroundColor: _getStatusColor(request.status)
+                                  .withOpacity(0.2),
                             ),
                           ],
                         ),
@@ -229,12 +246,15 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.check, color: Colors.green),
-                                    onPressed: () => _approveRequest(request.id),
+                                    icon: const Icon(Icons.check,
+                                        color: Colors.green),
+                                    onPressed: () =>
+                                        _approveRequest(request.id),
                                     tooltip: 'Одобрить',
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.close, color: Colors.red),
+                                    icon: const Icon(Icons.close,
+                                        color: Colors.red),
                                     onPressed: () => _rejectRequest(request.id),
                                     tooltip: 'Отклонить',
                                   ),
@@ -248,5 +268,3 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
     );
   }
 }
-
-

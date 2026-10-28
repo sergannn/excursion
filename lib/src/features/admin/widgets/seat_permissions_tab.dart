@@ -68,7 +68,7 @@ class _SeatPermissionsTabState extends ConsumerState<SeatPermissionsTab> {
       final excursionId = result['excursion_id'] as int;
       final userId = result['user_id'] as int;
       final excursionDate = result['excursion_date'] as String;
-      
+
       // Создаем разрешения для обоих мест (1 и 2)
       int createdCount = 0;
       for (final seatNumber in [1, 2]) {
@@ -87,12 +87,12 @@ class _SeatPermissionsTabState extends ConsumerState<SeatPermissionsTab> {
           }
         }
       }
-      
+
       _loadPermissions();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(createdCount == 2 
+            content: Text(createdCount == 2
                 ? 'Разрешения для мест 1 и 2 созданы'
                 : 'Создано разрешений: $createdCount из 2'),
             behavior: SnackBarBehavior.floating,
@@ -164,7 +164,11 @@ class _SeatPermissionsTabState extends ConsumerState<SeatPermissionsTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Разрешения на места 1-2'),
+        title: Text(
+          MediaQuery.sizeOf(context).width < 500
+              ? 'Разрешения'
+              : 'Разрешения на места 1-2',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -207,7 +211,8 @@ class _SeatPermissionsTabState extends ConsumerState<SeatPermissionsTab> {
 
 class _AddPermissionDialog extends ConsumerStatefulWidget {
   @override
-  ConsumerState<_AddPermissionDialog> createState() => _AddPermissionDialogState();
+  ConsumerState<_AddPermissionDialog> createState() =>
+      _AddPermissionDialogState();
 }
 
 class _AddPermissionDialogState extends ConsumerState<_AddPermissionDialog> {
@@ -228,7 +233,8 @@ class _AddPermissionDialogState extends ConsumerState<_AddPermissionDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Выбор экскурсии
-            const Text('Экскурсия:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Экскурсия:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             excursionsAsync.when(
               data: (excursions) => DropdownButtonFormField<Excursion>(
@@ -238,31 +244,34 @@ class _AddPermissionDialogState extends ConsumerState<_AddPermissionDialog> {
                   hintText: 'Выберите экскурсию',
                 ),
                 items: excursions.map((excursion) {
-                  final dateStr = DateFormat('dd.MM.yyyy HH:mm').format(excursion.dateTime);
+                  final dateStr =
+                      DateFormat('dd.MM.yyyy HH:mm').format(excursion.dateTime);
                   return DropdownMenuItem(
                     value: excursion,
                     child: Text('${excursion.title} - $dateStr'),
                   );
                 }).toList(),
-                onChanged: (value) => setState(() => _selectedExcursion = value),
+                onChanged: (value) =>
+                    setState(() => _selectedExcursion = value),
               ),
               loading: () => const CircularProgressIndicator(),
               error: (error, _) => Text('Ошибка: $error'),
             ),
             const SizedBox(height: 16),
-            
+
             // Выбор пользователя (только продавцы)
-            const Text('Продавец:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Продавец:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             usersAsync.when(
               data: (users) {
                 // Фильтруем только продавцов (role_id = 2 или роль содержит "Продавец")
                 final sellers = users.where((user) {
-                  return user.roleId == 2 || 
-                         user.roleName.toLowerCase().contains('продавец') ||
-                         user.roleName.toLowerCase().contains('seller');
+                  return user.roleId == 2 ||
+                      user.roleName.toLowerCase().contains('продавец') ||
+                      user.roleName.toLowerCase().contains('seller');
                 }).toList();
-                
+
                 return DropdownButtonFormField<UserSummary>(
                   value: _selectedUser,
                   decoration: const InputDecoration(
@@ -290,28 +299,29 @@ class _AddPermissionDialogState extends ConsumerState<_AddPermissionDialog> {
           child: const Text('Отмена'),
         ),
         ElevatedButton(
-          onPressed: _loading || _selectedExcursion == null || 
-                    _selectedUser == null
-              ? null
-              : () async {
-                  setState(() => _loading = true);
-                  try {
-                    // Используем дату из выбранной экскурсии
-                    final excursionDate = DateFormat('yyyy-MM-dd').format(_selectedExcursion!.dateTime);
-                    Navigator.pop(context, {
-                      'excursion_id': _selectedExcursion!.id,
-                      'user_id': _selectedUser!.id,
-                      'excursion_date': excursionDate,
-                    });
-                  } catch (e) {
-                    setState(() => _loading = false);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Ошибка: $e')),
-                      );
-                    }
-                  }
-                },
+          onPressed:
+              _loading || _selectedExcursion == null || _selectedUser == null
+                  ? null
+                  : () async {
+                      setState(() => _loading = true);
+                      try {
+                        // Используем дату из выбранной экскурсии
+                        final excursionDate = DateFormat('yyyy-MM-dd')
+                            .format(_selectedExcursion!.dateTime);
+                        Navigator.pop(context, {
+                          'excursion_id': _selectedExcursion!.id,
+                          'user_id': _selectedUser!.id,
+                          'excursion_date': excursionDate,
+                        });
+                      } catch (e) {
+                        setState(() => _loading = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Ошибка: $e')),
+                          );
+                        }
+                      }
+                    },
           child: _loading
               ? const SizedBox(
                   width: 20,
@@ -324,4 +334,3 @@ class _AddPermissionDialogState extends ConsumerState<_AddPermissionDialog> {
     );
   }
 }
-

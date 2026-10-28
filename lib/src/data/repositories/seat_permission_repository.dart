@@ -25,8 +25,10 @@ class SeatPermissionRepository {
       );
 
       return {
-        'has_permission_for_seat_1': response['has_permission_for_seat_1'] as bool? ?? false,
-        'has_permission_for_seat_2': response['has_permission_for_seat_2'] as bool? ?? false,
+        'has_permission_for_seat_1':
+            response['has_permission_for_seat_1'] as bool? ?? false,
+        'has_permission_for_seat_2':
+            response['has_permission_for_seat_2'] as bool? ?? false,
       };
     } on ApiException {
       rethrow;
@@ -112,7 +114,7 @@ class SeatPermissionRepository {
   Future<List<SeatAccessRequest>> fetchRequests({String? status}) async {
     try {
       final query = <String, dynamic>{};
-      if (status != null) query['status'] = status;
+      if (status != null && status.isNotEmpty) query['status'] = status;
 
       final response = await _client.getJson(
         '/api/seat-access-requests',
@@ -122,7 +124,8 @@ class SeatPermissionRepository {
 
       final items = response['requests'] as List<dynamic>? ?? const [];
       return items
-          .map((item) => SeatAccessRequest.fromJson(item as Map<String, dynamic>))
+          .map((item) =>
+              SeatAccessRequest.fromJson(item as Map<String, dynamic>))
           .toList();
     } on ApiException {
       rethrow;
@@ -139,7 +142,8 @@ class SeatPermissionRepository {
 
       final items = response['requests'] as List<dynamic>? ?? const [];
       return items
-          .map((item) => SeatAccessRequest.fromJson(item as Map<String, dynamic>))
+          .map((item) =>
+              SeatAccessRequest.fromJson(item as Map<String, dynamic>))
           .toList();
     } on ApiException {
       rethrow;
@@ -196,4 +200,3 @@ class SeatPermissionRepository {
     }
   }
 }
-

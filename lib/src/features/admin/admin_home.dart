@@ -54,6 +54,7 @@ class AdminHomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
     // Отслеживаем статус интернета
     final internetStatusAsync = ref.watch(internetStatusProvider);
     final hasInternet = internetStatusAsync.valueOrNull ?? true;
@@ -80,7 +81,7 @@ class AdminHomePage extends ConsumerWidget {
           backgroundColor: appBarColor,
           foregroundColor: Colors.white, // Белый цвет для всех элементов AppBar
           title: Text(
-            'Администратор — ${user.name}',
+            isCompact ? 'Администратор' : 'Администратор — ${user.name}',
             style: const TextStyle(
                 color: Colors.white), // Явно указываем белый цвет
           ),
@@ -120,6 +121,8 @@ class AdminHomePage extends ConsumerWidget {
             ),
           ],
           bottom: TabBar(
+            isScrollable: isCompact,
+            tabAlignment: isCompact ? TabAlignment.start : TabAlignment.fill,
             tabs: const [
               Tab(text: 'Бронирование'),
               Tab(text: 'Статистика'),
@@ -193,7 +196,7 @@ class _AdminDrawer extends ConsumerWidget {
             title: const Text('Расписание'),
             onTap: () {
               Navigator.of(context).pop();
-              _showPage(context, const _AdminScheduleTab());
+              _showPage(context, const _AdminScheduleTab(), standalone: true);
             },
           ),
           ListTile(
@@ -209,7 +212,7 @@ class _AdminDrawer extends ConsumerWidget {
             title: const Text('Разрешения на места 1-2'),
             onTap: () {
               Navigator.of(context).pop();
-              _showPage(context, const SeatPermissionsTab());
+              _showPage(context, const SeatPermissionsTab(), standalone: true);
             },
           ),
           ListTile(
@@ -217,7 +220,11 @@ class _AdminDrawer extends ConsumerWidget {
             title: const Text('Запросы доступа'),
             onTap: () {
               Navigator.of(context).pop();
-              _showPage(context, const SeatAccessRequestsTab());
+              _showPage(
+                context,
+                const SeatAccessRequestsTab(),
+                standalone: true,
+              );
             },
           ),
           ListTile(
@@ -225,7 +232,11 @@ class _AdminDrawer extends ConsumerWidget {
             title: const Text('Отмененные экскурсии'),
             onTap: () {
               Navigator.of(context).pop();
-              _showPage(context, const _CancelledExcursionsTab());
+              _showPage(
+                context,
+                const _CancelledExcursionsTab(),
+                standalone: true,
+              );
             },
           ),
           ListTile(
@@ -233,7 +244,7 @@ class _AdminDrawer extends ConsumerWidget {
             title: const Text('Расчетные листы'),
             onTap: () {
               Navigator.of(context).pop();
-              _showPage(context, const _SettlementsTab());
+              _showPage(context, const _SettlementsTab(), standalone: true);
             },
           ),
           ListTile(
@@ -307,15 +318,22 @@ class _AdminDrawer extends ConsumerWidget {
     );
   }
 
-  void _showPage(BuildContext context, Widget page) {
+  void _showPage(
+    BuildContext context,
+    Widget page, {
+    bool standalone = false,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute(
-          builder: (_) => Scaffold(
+        builder: (_) => standalone
+            ? page
+            : Scaffold(
                 appBar: AppBar(
                   title: const Text('Администратор'),
                 ),
                 body: page,
-              )),
+              ),
+      ),
     );
   }
 }
@@ -332,12 +350,15 @@ class _AdminBookingTab extends ConsumerStatefulWidget {
 class _AdminBookingTabState extends ConsumerState<_AdminBookingTab> {
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
     return DefaultTabController(
       length: 3,
       child: Column(
         children: [
-          const TabBar(
-            tabs: [
+          TabBar(
+            isScrollable: isCompact,
+            tabAlignment: isCompact ? TabAlignment.start : TabAlignment.fill,
+            tabs: const [
               Tab(text: 'Новое бронирование'),
               Tab(text: 'Мои бронирования'),
               Tab(text: 'Бронирования'),
@@ -1554,22 +1575,28 @@ class _ExcursionsTableHeader extends StatelessWidget {
           fontSize: 11,
         );
 
-    return Row(
-      children: [
-        Expanded(
-          flex: titleFlex,
-          child: Text('Название', style: style),
-        ),
-        Expanded(
-          flex: driverFlex,
-          child: Text('Вод', style: style, textAlign: TextAlign.center),
-        ),
-        Expanded(
-          flex: guideFlex,
-          child: Text('Экс', style: style, textAlign: TextAlign.center),
-        ),
-        if (showActionButtons) const SizedBox(width: actionsWidth),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 520;
+        return Row(
+          children: [
+            Expanded(
+              flex: titleFlex,
+              child: Text('Название', style: style),
+            ),
+            Expanded(
+              flex: driverFlex,
+              child: Text('Вод', style: style, textAlign: TextAlign.center),
+            ),
+            Expanded(
+              flex: guideFlex,
+              child: Text('Экс', style: style, textAlign: TextAlign.center),
+            ),
+            if (showActionButtons && !isCompact)
+              const SizedBox(width: actionsWidth),
+          ],
+        );
+      },
     );
   }
 }
@@ -1746,180 +1773,203 @@ class _AdminExcursionCard extends ConsumerWidget {
       color: cardColor,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 520;
+            final information = _buildInformationRow(context);
+            if (!showActionButtons) {
+              return information;
+            }
+
+            final actions = _buildActionButtons(context, ref, isCompact);
+            if (isCompact) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  information,
+                  const SizedBox(height: 6),
+                  actions,
+                ],
+              );
+            }
+
+            return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: _titleFlex,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              excursion.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.black87,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ),
-                          if (excursion.isCancelled)
-                            Container(
-                              margin: const EdgeInsets.only(left: 6),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'ОТМЕНЕНА',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${formatter.format(excursion.dateTime)} • занято ${excursion.bookedSeatsCount}/${excursion.maxSeats}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.blueGrey.shade600,
-                              fontSize: 11,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  flex: _driverFlex,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      _staffNames(_driversForSlot),
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontSize: 11, height: 1.25),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: _guideFlex,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      _staffNames(_guidesForSlot),
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontSize: 11, height: 1.25),
-                    ),
-                  ),
-                ),
-                if (showActionButtons)
-                  SizedBox(
-                    width: _actionsWidth,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.photo_library_outlined,
-                              size: 20),
-                          tooltip: 'Фотографии экскурсии',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                          onPressed: () => showExcursionGalleryDialog(
-                            context: context,
-                            ref: ref,
-                            excursion: excursion,
-                          ),
-                        ),
-                        if (1 == 2)
-                          IconButton(
-                            icon: const Icon(Icons.directions_bus, size: 20),
-                            tooltip: 'Автобусы экскурсии',
-                            padding: const EdgeInsets.all(8),
-                            constraints: const BoxConstraints(),
-                            onPressed: excursion.isCancelled
-                                ? null
-                                : () => _showExcursionBuses(context, ref),
-                          ),
-                        IconButton(
-                          icon: const Icon(Icons.list, size: 20),
-                          tooltip: excursion.isCancelled
-                              ? 'Экскурсия отменена'
-                              : 'Выбрать места',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                          onPressed: (excursion.isCancelled ||
-                                  excursion.busSeats.isEmpty)
-                              ? null
-                              : () => _showSeatSheet(context, ref),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.event_seat, size: 20),
-                          tooltip: excursion.isCancelled
-                              ? 'Экскурсия отменена'
-                              : 'Схема рассадки',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                          onPressed: (excursion.busSeats.isEmpty ||
-                                  excursion.isCancelled)
-                              ? null
-                              : () => _showSeatingChart(context, ref),
-                        ),
-                        IconButton(
-                          icon:
-                              const Icon(Icons.description_outlined, size: 20),
-                          tooltip: excursion.isCancelled
-                              ? 'Экскурсия отменена'
-                              : 'Ведомость',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                          onPressed: (excursion.busSeats.isEmpty ||
-                                  excursion.isCancelled)
-                              ? null
-                              : () => _showManifestDialog(context, ref),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.person_add, size: 20),
-                          tooltip: excursion.isCancelled
-                              ? 'Экскурсия отменена'
-                              : 'Назначить персонал',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                          onPressed: excursion.isCancelled
-                              ? null
-                              : () => _assignStaff(context, ref),
-                        ),
-                      ],
-                    ),
-                  ),
+                Expanded(child: information),
+                actions,
               ],
-            ),
-          ],
+            );
+          },
         ),
+      ),
+    );
+  }
+
+  Widget _buildInformationRow(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: _titleFlex,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      excursion.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.black87,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                  if (excursion.isCancelled)
+                    Container(
+                      margin: const EdgeInsets.only(left: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'ОТМЕНЕНА',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${formatter.format(excursion.dateTime)} • занято ${excursion.bookedSeatsCount}/${excursion.maxSeats}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.blueGrey.shade600,
+                      fontSize: 11,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: _driverFlex,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              _staffNames(_driversForSlot),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(fontSize: 11, height: 1.25),
+            ),
+          ),
+        ),
+        Expanded(
+          flex: _guideFlex,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              _staffNames(_guidesForSlot),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(fontSize: 11, height: 1.25),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    bool isCompact,
+  ) {
+    return SizedBox(
+      width: isCompact ? double.infinity : _actionsWidth,
+      child: Row(
+        mainAxisAlignment:
+            isCompact ? MainAxisAlignment.spaceEvenly : MainAxisAlignment.end,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.photo_library_outlined, size: 20),
+            tooltip: 'Фотографии экскурсии',
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
+            onPressed: () => showExcursionGalleryDialog(
+              context: context,
+              ref: ref,
+              excursion: excursion,
+            ),
+          ),
+          if (1 == 2)
+            IconButton(
+              icon: const Icon(Icons.directions_bus, size: 20),
+              tooltip: 'Автобусы экскурсии',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(),
+              onPressed: excursion.isCancelled
+                  ? null
+                  : () => _showExcursionBuses(context, ref),
+            ),
+          IconButton(
+            icon: const Icon(Icons.list, size: 20),
+            tooltip:
+                excursion.isCancelled ? 'Экскурсия отменена' : 'Выбрать места',
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
+            onPressed: (excursion.isCancelled || excursion.busSeats.isEmpty)
+                ? null
+                : () => _showSeatSheet(context, ref),
+          ),
+          IconButton(
+            icon: const Icon(Icons.event_seat, size: 20),
+            tooltip:
+                excursion.isCancelled ? 'Экскурсия отменена' : 'Схема рассадки',
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
+            onPressed: (excursion.busSeats.isEmpty || excursion.isCancelled)
+                ? null
+                : () => _showSeatingChart(context, ref),
+          ),
+          IconButton(
+            icon: const Icon(Icons.description_outlined, size: 20),
+            tooltip: excursion.isCancelled ? 'Экскурсия отменена' : 'Ведомость',
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
+            onPressed: (excursion.busSeats.isEmpty || excursion.isCancelled)
+                ? null
+                : () => _showManifestDialog(context, ref),
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_add, size: 20),
+            tooltip: excursion.isCancelled
+                ? 'Экскурсия отменена'
+                : 'Назначить персонал',
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
+            onPressed:
+                excursion.isCancelled ? null : () => _assignStaff(context, ref),
+          ),
+        ],
       ),
     );
   }

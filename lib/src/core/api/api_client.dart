@@ -60,12 +60,12 @@ class ApiClient {
     final fullPath = uri.path.endsWith('/')
         ? '${uri.path}$normalizedPath'
         : '${uri.path}/$normalizedPath';
-    
+
     // Обрабатываем query параметры, включая массивы
     if (query == null || query.isEmpty) {
       return uri.replace(path: fullPath);
     }
-    
+
     // Строим query строку вручную для поддержки массивов
     final queryParts = <String>[];
     query.forEach((key, value) {
@@ -73,13 +73,15 @@ class ApiClient {
         // Для массивов создаем несколько параметров с ключом key[]
         // Это будет обработано как ids[]=1&ids[]=2 в URL
         for (var item in value) {
-          queryParts.add('${Uri.encodeComponent(key)}[]=${Uri.encodeComponent(item.toString())}');
+          queryParts.add(
+              '${Uri.encodeComponent(key)}[]=${Uri.encodeComponent(item.toString())}');
         }
       } else {
-        queryParts.add('${Uri.encodeComponent(key)}=${Uri.encodeComponent(value.toString())}');
+        queryParts.add(
+            '${Uri.encodeComponent(key)}=${Uri.encodeComponent(value.toString())}');
       }
     });
-    
+
     final queryString = queryParts.join('&');
     return uri.replace(
       path: fullPath,
@@ -185,8 +187,13 @@ class ApiClient {
     String message = 'Request failed with status ${response.statusCode}';
     try {
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-      
-      // Для ошибок валидации (422) Laravel возвращает ошибки в поле 'errors'
+
+      final bodyMessage = decoded['message'];
+      if (bodyMessage is String && bodyMessage.isNotEmpty) {
+        message = bodyMessage;
+      }
+
+      // Laravel может возвращать детальные ошибки валидации в поле 'errors'.
       if (response.statusCode == 422 && decoded.containsKey('errors')) {
         final errors = decoded['errors'] as Map<String, dynamic>?;
         if (errors != null && errors.isNotEmpty) {
@@ -196,12 +203,6 @@ class ApiClient {
           if (firstErrorMessages != null && firstErrorMessages.isNotEmpty) {
             message = firstErrorMessages.first.toString();
           }
-        }
-      } else {
-        // Для других ошибок ищем сообщение в поле 'message'
-        final bodyMessage = decoded['message'] as String?;
-        if (bodyMessage != null && bodyMessage.isNotEmpty) {
-          message = bodyMessage;
         }
       }
     } catch (_) {}
