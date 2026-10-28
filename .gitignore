@@ -52,3 +52,4 @@ sentry-wizard
 
 # Local migration exports may contain customer data and legacy passwords.
 /supabase/.private_import/
+/supabase/.temp/
