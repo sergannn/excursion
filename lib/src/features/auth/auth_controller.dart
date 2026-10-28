@@ -38,10 +38,13 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       state = AsyncValue.data(user);
       return null; // Успешный вход, ошибки нет
     } on ApiException catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-      return e.message; // Возвращаем сообщение об ошибке
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      state = const AsyncValue.data(null);
+      if (e.statusCode == 401) {
+        return 'Неверный email или пароль.';
+      }
+      return 'Не удалось войти. Попробуйте ещё раз.';
+    } catch (_) {
+      state = const AsyncValue.data(null);
       return 'Произошла ошибка при входе.';
     }
   }
