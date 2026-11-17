@@ -36,7 +36,7 @@ jobs:
         run: >-
           flutter build web --release
           --base-href /excursion/
-          --dart-define=SUPABASE_URL=https://excursion.panfilius.ru/supabase
+          --dart-define=SUPABASE_URL=https://supabase-excursion.postagents.ru
           --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_dO4rGsIblfHf3YZxzM-mOs_NdL7O3ZG
 
       - name: Add single-page fallback
