@@ -132,7 +132,7 @@ class InternetConnectionService {
         headers['Authorization'] = 'Bearer $token';
       } else {
         // Если токена нет - используем публичный health endpoint
-        checkUrl = Uri.parse('${AppConfig.apiBaseUrl}/up');
+        checkUrl = Uri.parse('${AppConfig.apiBaseUrl}/app');
       }
 
       // Проверяем реальное подключение к нашему API через HTTP запрос
@@ -141,10 +141,9 @@ class InternetConnectionService {
           .get(checkUrl, headers: headers)
           .timeout(_connectionTimeout);
 
-      // Если получили ответ (даже с ошибкой), значит интернет и сервер доступны
-      // Для /me: 200 = OK, 401 = не авторизован (но сервер доступен)
-      // Для /up: 200 = OK
-      return response.statusCode >= 200 && response.statusCode < 500;
+      // /app confirms the API works; /me can also reject an expired session.
+      return response.statusCode == 200 ||
+          (token != null && token.isNotEmpty && response.statusCode == 401);
     } catch (e) {
       // Если запрос не прошел (таймаут, нет сети и т.д.), значит интернета нет
       return false;
