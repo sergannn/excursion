@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
@@ -28,7 +30,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   }
 
   Future<String?> signIn(String email, String password) async {
-    state = const AsyncValue.loading();
     try {
       final user = await _repository.signIn(email, password);
       if (user == null) {
@@ -39,10 +40,16 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       return null; // Успешный вход, ошибки нет
     } on ApiException catch (e) {
       state = const AsyncValue.data(null);
+      if (e.isNoInternet) {
+        return 'Сервер входа не ответил. Проверьте соединение и повторите попытку.';
+      }
       if (e.statusCode == 401) {
         return 'Неверный email или пароль.';
       }
       return 'Не удалось войти. Попробуйте ещё раз.';
+    } on TimeoutException {
+      state = const AsyncValue.data(null);
+      return 'Сервер входа не ответил вовремя. Повторите попытку.';
     } catch (_) {
       state = const AsyncValue.data(null);
       return 'Произошла ошибка при входе.';

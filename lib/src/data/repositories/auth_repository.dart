@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api/api_exception.dart';
@@ -27,8 +29,13 @@ class AuthRepository {
         return null;
       }
       return fetchCurrentUser();
+    } on TimeoutException {
+      throw ApiException('Сервер не ответил вовремя.', 0);
+    } on AuthRetryableFetchException {
+      throw ApiException('Не удалось связаться с сервером входа.', 0);
     } on AuthException catch (error) {
-      throw ApiException(error.message, 401);
+      throw ApiException(error.message,
+          error.code == 'invalid_credentials' ? 401 : int.tryParse(error.statusCode ?? '') ?? 500);
     }
   }
 
