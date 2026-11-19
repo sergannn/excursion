@@ -8,7 +8,6 @@ import '../admin/admin_home.dart';
 import '../staff/staff_home.dart';
 import 'widgets/internet_status_snackbar.dart';
 import '../../core/services/internet_connection_service.dart';
-import '../../core/api/api_client.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
@@ -16,11 +15,7 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Инициализируем сервис проверки интернета
-    final internetService = ref.watch(internetConnectionServiceProvider);
-    
-    // Настраиваем API клиент с сервисом проверки интернета
-    // Это нужно сделать один раз при первом рендере
-    ApiClient.instance.setInternetService(internetService);
+    ref.watch(internetConnectionServiceProvider);
     
     final authState = ref.watch(authControllerProvider);
     

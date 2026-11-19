@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'api_exception.dart';
-import '../services/internet_connection_service.dart';
 
 abstract class TokenProvider {
   Future<String?> getToken();
@@ -12,16 +11,15 @@ abstract class TokenProvider {
 }
 
 class ApiClient {
-  ApiClient._internal() : _client = http.Client();
+  ApiClient._internal({http.Client? client}) : _client = client ?? http.Client();
 
   static final ApiClient instance = ApiClient._internal();
 
-  static ApiClient create() => ApiClient._internal();
+  static ApiClient create({http.Client? client}) => ApiClient._internal(client: client);
 
   final http.Client _client;
   late String _baseUrl;
   late TokenProvider _tokenProvider;
-  InternetConnectionService? _internetService;
 
   /// Получает base URL (публичный метод)
   String get baseUrl => _baseUrl;
@@ -29,29 +27,9 @@ class ApiClient {
   void configure({
     required String baseUrl,
     required TokenProvider tokenProvider,
-    InternetConnectionService? internetService,
   }) {
     _baseUrl = baseUrl;
     _tokenProvider = tokenProvider;
-    _internetService = internetService;
-  }
-
-  /// Установить сервис проверки интернета (можно вызвать после configure)
-  void setInternetService(InternetConnectionService service) {
-    _internetService = service;
-  }
-
-  /// Проверка интернета перед запросом
-  Future<void> _checkInternetBeforeRequest() async {
-    if (_internetService != null) {
-      final hasInternet = await _internetService!.hasInternet;
-      if (!hasInternet) {
-        throw ApiException(
-          'Нет подключения к интернету. Проверьте соединение и попробуйте снова.',
-          0, // Специальный код для отсутствия интернета
-        );
-      }
-    }
   }
 
   Uri _buildUri(String path, [Map<String, dynamic>? query]) {
@@ -103,7 +81,6 @@ class ApiClient {
     bool authenticated = false,
     Map<String, String>? headers,
   }) async {
-    await _checkInternetBeforeRequest();
     final baseHeaders = await _headers(authenticated: authenticated);
     final allHeaders = {
       ...baseHeaders,
@@ -120,7 +97,6 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = false,
   }) async {
-    await _checkInternetBeforeRequest();
     final headers = await _headers(authenticated: authenticated);
     final response = await _client.post(
       _buildUri(path),
@@ -136,7 +112,6 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = false,
   }) async {
-    await _checkInternetBeforeRequest();
     final headers = await _headers(authenticated: authenticated);
     final response = await _client.put(
       _buildUri(path),
@@ -152,7 +127,6 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = false,
   }) async {
-    await _checkInternetBeforeRequest();
     final headers = await _headers(authenticated: authenticated);
     final response = await _client.delete(
       _buildUri(path),

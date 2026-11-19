@@ -18,6 +18,7 @@ class SeatAccessRequestsTab extends ConsumerStatefulWidget {
 class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
   List<SeatAccessRequest> _requests = [];
   bool _loading = false;
+  String? _loadError;
   String _filterStatus = 'pending';
 
   @override
@@ -27,17 +28,25 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
   }
 
   Future<void> _loadRequests() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
     try {
       final client = ref.read(apiClientProvider);
       final repo = SeatPermissionRepository(client);
       final requests = await repo.fetchRequests(status: _filterStatus);
+      if (!mounted) return;
       setState(() {
         _requests = requests;
         _loading = false;
       });
     } on ApiException catch (e) {
-      setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _loadError = e.message;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -48,7 +57,11 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
         );
       }
     } catch (_) {
-      setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _loadError = 'Не удалось загрузить запросы';
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -212,6 +225,16 @@ class _SeatAccessRequestsTabState extends ConsumerState<SeatAccessRequestsTab> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
+          : _loadError != null
+              ? Center(child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(_loadError!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(onPressed: _loadRequests,
+                        icon: const Icon(Icons.refresh), label: const Text('Повторить')),
+                  ]),
+                ))
           : _requests.isEmpty
               ? const Center(child: Text('Нет запросов'))
               : ListView.builder(
